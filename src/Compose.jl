@@ -61,7 +61,8 @@ function clip(range::UnitRange, mask::UnitRange)
     return imin:imax
 end
 
-function linterp(x0::T, y0::T, x1::T, y1::T, x::T, extrap::Bool=false) where {T<:AbstractFloat}
+function linterp(x0::T, y0::T, x1::T, y1::T, x::T,
+                 extrap::Bool=false) where {T<:AbstractFloat}
     if !extrap
         if x0 < x1
             @assert x0 <= x && x <= x1
@@ -86,24 +87,31 @@ function linterp(x0::T, y0::T, x1::T, y1::T, x::T, extrap::Bool=false) where {T<
     return y
 end
 
-function linterp(x0::Number, y0::Number, x1::Number, y1::Number, x::Number, extrap::Bool=false)
+function linterp(x0::Number, y0::Number, x1::Number, y1::Number, x::Number,
+                 extrap::Bool=false)
     return linterp(promote(x0, y0, x1, y1, x)..., extrap)
 end
 
-function linterp0(arr::Array{T,3}, i::Int, j::Int, k::Int)::T where {T<:AbstractFloat}
+function linterp0(arr::Array{T,3}, i::Int, j::Int,
+                  k::Int)::T where {T<:AbstractFloat}
     return arr[i, j, k]
 end
-function linterp1(arr::Array{T,3}, i::Int, j::Int, k::Int, x::T)::T where {T<:AbstractFloat}
+function linterp1(arr::Array{T,3}, i::Int, j::Int, k::Int,
+                  x::T)::T where {T<:AbstractFloat}
     return (1 - x) * linterp0(arr, i, j, k) + x * linterp0(arr, i + 1, j, k)
 end
-function linterp2(arr::Array{T,3}, i::Int, j::Int, k::Int, x::T, y::T)::T where {T<:AbstractFloat}
-    return (1 - y) * linterp1(arr, i, j, k, x) + y * linterp1(arr, i, j + 1, k, x)
+function linterp2(arr::Array{T,3}, i::Int, j::Int, k::Int, x::T,
+                  y::T)::T where {T<:AbstractFloat}
+    return (1 - y) * linterp1(arr, i, j, k, x) +
+           y * linterp1(arr, i, j + 1, k, x)
 end
-function linterp3(arr::Array{T,3}, i::Int, j::Int, k::Int, x::T, y::T, z::T)::T where {T<:AbstractFloat}
+function linterp3(arr::Array{T,3}, i::Int, j::Int, k::Int, x::T, y::T,
+                  z::T)::T where {T<:AbstractFloat}
     @assert 0 ≤ x ≤ 1
     @assert 0 ≤ y ≤ 1
     @assert 0 ≤ z ≤ 1
-    return (1 - z) * linterp2(arr, i, j, k, x, y) + z * linterp2(arr, i, j, k + 1, x, y)
+    return (1 - z) * linterp2(arr, i, j, k, x, y) +
+           z * linterp2(arr, i, j, k + 1, x, y)
 end
 
 #
@@ -129,7 +137,8 @@ function find_outliers_dedt(table_e::AbstractArray{<:Real,3})
                 avg_e = mean(table_e[inbrange, itrange, iyqrange])
                 # Assume that the point further from the average is
                 # the outlier
-                if abs(table_e[inb, prev_it, iyq] - avg_e) > abs(table_e[inb, it, iyq] - avg_e)
+                if abs(table_e[inb, prev_it, iyq] - avg_e) >
+                   abs(table_e[inb, it, iyq] - avg_e)
                     # Disable the previous point
                     outliers[inb, prev_it, iyq] = true
                     # Next, compare the current point to the one
@@ -179,7 +188,8 @@ function find_outliers_dedt(table_e::AbstractArray{<:Real,3})
     return outliers
 end
 
-function correct_outliers_dedt(table_e::AbstractArray{<:Real,3}, outliers::AbstractArray{Bool,3})
+function correct_outliers_dedt(table_e::AbstractArray{<:Real,3},
+                               outliers::AbstractArray{Bool,3})
     @assert size(table_e) == size(outliers)
     table_e_new = copy(table_e)
     nnb, nt, nyq = size(table_e)
@@ -215,7 +225,10 @@ function correct_outliers_dedt(table_e::AbstractArray{<:Real,3}, outliers::Abstr
             @assert 1 ≤ prev_it ≤ nt
             @assert 1 ≤ next_it ≤ nt
             # Linear interpolation
-            table_e_new[inb, it, iyq] = linterp(prev_it, table_e[inb, prev_it, iyq], next_it, table_e[inb, next_it, iyq], it,
+            table_e_new[inb, it, iyq] = linterp(prev_it,
+                                                table_e[inb, prev_it, iyq],
+                                                next_it,
+                                                table_e[inb, next_it, iyq], it,
                                                 extrap)
         end
     end
@@ -227,11 +240,14 @@ end
 
 function main()
     filename = "$(ENV["HOME"])/data/eos31/eos/eoscompose.h5"
+    filename2 = "$(ENV["HOME"])/data/eos31/eos/eoscompose_corrected.h5"
+
     file = h5open(filename, "r")
 
     # Metadata
     date = Date(read(attributes(file["metadata"])["date"]), dateformat"y/m/d")
-    time = Time(read(attributes(file["metadata"])["time"]), dateformat"H\hM\mS\ss")
+    time = Time(read(attributes(file["metadata"])["time"]),
+                dateformat"H\hM\mS\ss")
 
     # Parameters
     pointsnb = read(attributes(file["Parameters"])["pointsnb"])[]
@@ -268,7 +284,8 @@ function main()
     @assert size(thermo) == (pointsnb, pointst, pointsyq, pointsqty)
     @info "Read EOS table with ($pointsnb, $pointst, $pointsyq) entries for $pointsqty quantities"
 
-    inverse_index_thermo = Dict(idx => n for (n, idx) in enumerate(index_thermo))
+    inverse_index_thermo = Dict(idx => n
+                                for (n, idx) in enumerate(index_thermo))
 
     # Ensure dE/dT > 0
 
@@ -284,15 +301,25 @@ function main()
     outliers = find_outliers_dedt(table_e)
     npoints = length(outliers)
     noutliers = count(outliers)
-    @info "dE/dT ≤ 0 at $noutliers of $npoints ($(100 * noutliers / npoints)%)"
+    @info "dE/dT ≤ 0 at $noutliers of $npoints points ($(100 * noutliers / npoints)%)"
 
     @info "Correcting outliers..."
     table_e_new = correct_outliers_dedt(table_e, outliers)
     outliers_new = find_outliers_dedt(table_e_new)
     any(outliers_new) && error("Could not correct outliers")
+    @info "Corrected all outliers"
 
     # Save result
+    @info "Writing result..."
 
+    # Copy HDF5 file
+    cp(filename, filename2; force=true)
+    # Update thermodynamics table
+    file2 = h5open(filename2, "r+")
+    file2["Thermo_qty"]["thermo"][:, :, :, ie] = table_e
+    close(file2)
+
+    @info "Done."
     return nothing
 end
 

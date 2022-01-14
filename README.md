@@ -21,3 +21,14 @@ Unfortunately, the tables might contain outliers where this condition
 doesn't hold, especially for extreme values of `n_b`. This package
 finds these outliers and replaces them by interpolated values,
 ensuring that this condition holds everywhere.
+
+Here is some example output:
+```
+[ Info: Read EOS table with (164, 163, 51) entries for 8 quantities
+[ Info: Looking for outliers...
+[ Info: dE/dT ≤ 0 at 306 of 1363332 points (0.022445009726170882%)
+[ Info: Correcting outliers...
+[ Info: Corrected all outliers
+[ Info: Writing result...
+[ Info: Done.
+```
