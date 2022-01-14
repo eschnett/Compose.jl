@@ -253,7 +253,7 @@ function main()
     pointsnb = read(attributes(file["Parameters"])["pointsnb"])[]
     pointst = read(attributes(file["Parameters"])["pointst"])[]
     pointsyq = read(attributes(file["Parameters"])["pointsyq"])[]
-    tabulation_scheme = read(attributes(file["Parameters"])["tabulation_scheme"])[] # ???
+    tabulation_scheme = read(attributes(file["Parameters"])["tabulation_scheme"])[] # 0 explicit, 1 loop
 
     @assert pointsnb >= 0
     @assert pointst >= 0
@@ -281,6 +281,8 @@ function main()
     @assert length(Set(index_thermo)) == length(index_thermo)
     @assert all(idx ∈ keys(thermo_qtys) for idx in index_thermo)
 
+    # This order is hard-coded into `hdf5compose.f90`. It is different
+    # from the order given in `eos.parameters`.
     @assert size(thermo) == (pointsnb, pointst, pointsyq, pointsqty)
     @info "Read EOS table with ($pointsnb, $pointst, $pointsyq) entries for $pointsqty quantities"
 
